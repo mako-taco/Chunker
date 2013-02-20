@@ -49,89 +49,89 @@ You could replace it with...
     		a = result;	
 		});
  */
-var chunker = {
-	map: function(options) {
+var chunker = (function() {
+	var _validateInput = function(options) {
 		var array = options.array;
 		var fn = options.fn;
-		var size = options.size || 50;
-		var callback = options.callback || function(){};
 		var missingParams = [];
 		if(!array) missingParams.push("array");
 		if(!fn) missingParams.push("fn");
 		if(missingParams.length > 0) 
 			throw "chunker.map passed an object without required params ("
 				+ missingParams.join(', ') + ")";
+	};
 
-		var map = [];
-		var chunk = function(start, size) {
-			if(start < array.length) {
-				array.slice(start, start+size).forEach( function(obj) {
-					map.push( fn(obj) );
-				});
-				setTimeout( function() {
-					chunk(start+size, size);
-				}, 0);
+	var _chunker = {
+		map: function(options) {
+			var array = options.array;
+			var fn = options.fn;
+			var size = options.size || 50;
+			var callback = options.callback || function(){};
+			_validateInput(options);
+
+			var map = [];
+			var chunk = function(start, size) {
+				if(start < array.length) {
+					array.slice(start, start+size).forEach( function(obj) {
+						map.push( fn(obj) );
+					});
+					setTimeout( function() {
+						chunk(start+size, size);
+					}, 0);
+				}
+				else {
+					callback(map);
+				} 
 			}
-			else {
-				callback(map);
-			} 
-		}
-		chunk(0, size);
-	},
+			chunk(0, size);
+		},
 
-	filter: function(options) {
-		var array = options.array;
-		var fn = options.fn;
-		var size = options.size || 50;
-		var callback = options.callback || function(){};
-		var missingParams = [];
-		if(!array) missingParams.push("array");
-		if(!fn) missingParams.push("fn");
-		if(missingParams.length > 0) 
-			throw "chunker.filter passed an object without required params (" 
-				+ missingParams.join(', ') + ")";
+		filter: function(options) {
+			var array = options.array;
+			var fn = options.fn;
+			var size = options.size || 50;
+			var callback = options.callback || function(){};
+			_validateInput(options);
 
-		var filter = [];
-		var chunk = function(start, size) {
-			if(start < array.length) {
-				array.slice(start, start+size).forEach( function(obj) {
-					if(fn(obj)) 
-						filter.push(obj);
-				});
-				setTimeout( function() {
-					chunk(start+size, size);
-				}, 0);
+			var filter = [];
+			var chunk = function(start, size) {
+				if(start < array.length) {
+					array.slice(start, start+size).forEach( function(obj) {
+						if(fn(obj)) 
+							filter.push(obj);
+					});
+					setTimeout( function() {
+						chunk(start+size, size);
+					}, 0);
+				}
+				else {
+					callback(filter);
+				} 
 			}
-			else {
-				callback(filter);
-			} 
-		}
-		chunk(0, size);
-	},
+			chunk(0, size);
+		},
 
-	forEach: function(options) {
-		var array = options.array;
-		var fn = options.fn;
-		var size = options.size || 50;
-		var callback = options.callback || function(){};
-		var missingParams = [];
-		if(!array) missingParams.push("array");
-		if(!fn) missingParams.push("fn");
-		if(missingParams.length > 0) 
-			throw "chunker.forEach passed an object without required params (" 
-				+ missingParams.join(', ') + ")";
-
-		var chunk = function(start, size) {
-			if(start < array.length) {
-				array.slice(start, start+size).forEach(fn);
-				setTimeout( function() {
-					chunk(start+size, size);
-				}, 0);
+		forEach: function(options) {
+			var array = options.array;
+			var fn = options.fn;
+			var size = options.size || 50;
+			var callback = options.callback || function(){};
+			_validateInput(options);
+			
+			var chunk = function(start, size) {
+				if(start < array.length) {
+					array.slice(start, start+size).forEach(fn);
+					setTimeout( function() {
+						chunk(start+size, size);
+					}, 0);
+				}
+				else {
+					callback();
+				} 
 			}
-			else {
-				callback();
-			} 
+			chunk(0, size);
 		}
-		chunk(0, size);
-	}
-};
+	};
+
+	return _chunker;
+})();
