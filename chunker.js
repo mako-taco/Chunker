@@ -49,7 +49,7 @@ You could replace it with...
     		a = result;	
 		});
  */
-var chunker = (function() {
+(function() {
 	var _validateInput = function(options) {
 		var array = options.array;
 		var fn = options.fn;
@@ -61,7 +61,7 @@ var chunker = (function() {
 				+ missingParams.join(', ') + ")";
 	};
 
-	var _chunker = {
+	window.chunker = {
 		map: function(options) {
 			var array = options.array;
 			var fn = options.fn;
@@ -72,9 +72,11 @@ var chunker = (function() {
 			var map = [];
 			var chunk = function(start, size) {
 				if(start < array.length) {
-					array.slice(start, start+size).forEach( function(obj) {
-						map.push( fn(obj) );
-					});
+					var slice = array.slice(start, start+size);
+					for(var i=0, len = slice.length; i<len; i++) {
+						map.push( fn(slice[i]) );
+					}
+
 					setTimeout( function() {
 						chunk(start+size, size);
 					}, 0);
@@ -96,10 +98,12 @@ var chunker = (function() {
 			var filter = [];
 			var chunk = function(start, size) {
 				if(start < array.length) {
-					array.slice(start, start+size).forEach( function(obj) {
-						if(fn(obj)) 
-							filter.push(obj);
-					});
+					var slice = array.slice(start, start+size);
+					for(var i=0,len = slice.length; i<len; i++) {
+						if(fn(slice[i])) 
+							filter.push(slice[i]);
+					}
+
 					setTimeout( function() {
 						chunk(start+size, size);
 					}, 0);
@@ -120,28 +124,11 @@ var chunker = (function() {
 			
 			var chunk = function(start, size) {
 				if(start < array.length) {
-					array.slice(start, start+size).forEach(fn);
-					setTimeout( function() {
-						chunk(start+size, size);
-					}, 0);
-				}
-				else {
-					callback();
-				} 
-			}
-			chunk(0, size);
-		},
+					var slice = array.slice(start, start+size);
+					for(var i=0,len = slice.length; i<len; i++) {
+						fn(slice[i]);
+					}
 
-		every: function(options) {
-			var array = options.array;
-			var fn = options.fn;
-			var size = options.size || 50;
-			var callback = options.callback || function(){};
-			_validateInput(options);
-			
-			var chunk = function(start, size) {
-				if(start < array.length) {
-					array.slice(start, start+size).forEach(fn);
 					setTimeout( function() {
 						chunk(start+size, size);
 					}, 0);
@@ -153,6 +140,4 @@ var chunker = (function() {
 			chunk(0, size);
 		}
 	};
-
-	return _chunker;
 })();
