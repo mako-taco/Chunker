@@ -130,6 +130,27 @@ var chunker = (function() {
 				} 
 			}
 			chunk(0, size);
+		},
+
+		every: function(options) {
+			var array = options.array;
+			var fn = options.fn;
+			var size = options.size || 50;
+			var callback = options.callback || function(){};
+			_validateInput(options);
+			
+			var chunk = function(start, size) {
+				if(start < array.length) {
+					array.slice(start, start+size).forEach(fn);
+					setTimeout( function() {
+						chunk(start+size, size);
+					}, 0);
+				}
+				else {
+					callback();
+				} 
+			}
+			chunk(0, size);
 		}
 	};
 
