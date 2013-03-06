@@ -67,6 +67,7 @@ You could replace it with...
 			var fn = options.fn;
 			var size = options.size || 50;
 			var callback = options.callback || function(){};
+			var error = options.error || function(){};
 			_validateInput(options);
 
 			var map = [];
@@ -85,7 +86,12 @@ You could replace it with...
 					callback(map);
 				} 
 			}
-			chunk(0, size);
+			try {
+				chunk(0, size);
+			}
+			catch(err) {
+				error(err);
+			}
 		},
 
 		filter: function(options) {
@@ -93,6 +99,7 @@ You could replace it with...
 			var fn = options.fn;
 			var size = options.size || 50;
 			var callback = options.callback || function(){};
+			var error = options.error || function(){};
 			_validateInput(options);
 
 			var filter = [];
@@ -112,7 +119,12 @@ You could replace it with...
 					callback(filter);
 				} 
 			}
-			chunk(0, size);
+			try {
+				chunk(0, size);
+			}
+			catch(err) {
+				error(err);
+			}
 		},
 
 		forEach: function(options) {
@@ -120,6 +132,7 @@ You could replace it with...
 			var fn = options.fn;
 			var size = options.size || 50;
 			var callback = options.callback || function(){};
+			var error = options.error || function(){};
 			_validateInput(options);
 			
 			var chunk = function(start, size) {
@@ -137,7 +150,43 @@ You could replace it with...
 					callback();
 				} 
 			}
-			chunk(0, size);
+			try {
+				chunk(0, size);
+			}
+			catch(err) {
+				error(err);
+			}
+		},
+
+		every: function(options) {
+			var array = options.array;
+			var fn = options.fn;
+			var size = options.size || 50;
+			var callback = options.callback || function(){};
+			var error = options.error || function(){};
+			_validateInput(options);
+			
+			var chunk = function(start, size) {
+				if(start < array.length) {
+					var slice = array.slice(start, start+size);
+					for(var i=0,len = slice.length; i<len; i++) {
+						fn(slice[i]) ? 0 : callback(false);
+					}
+
+					setTimeout( function() {
+						chunk(start+size, size);
+					}, 0);
+				}
+				else {
+					callback(true);
+				} 
+			}
+			try {
+				chunk(0, size);
+			}
+			catch(err) {
+				error(err);
+			}
 		}
 	};
 })();

@@ -21,7 +21,7 @@ this form:
 
         callback: function () {...}		OPTIONAL - a function to execute upon 
 										completion of processing the array
-      }
+    }
 
 Any time you would use map/filer/forEach:
 
