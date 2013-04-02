@@ -8,22 +8,21 @@ the annoying 'this script has been executing for a long time' dialog when doing
 heavy computations.  To use chunker, feed any of its functions an object in 
 this form:
 
-    {
-        array: [...],					REQUIRED - a large array of data that you 
-        									want to process
+`(Required) array`: the array to process
 
-        fn: function() {...},			REQUIRED - a function you would feed to 
-    									map/filter/forEach to apply to each 
-										element
+`(Required) fn(item)`: a function to call on each array element as you would with Array.map(fn)
 
-        size: 100, 						OPTIONAL - the number of items to process 
-										in a single chunking. Defaults to 100.
+`(Optional) size`: how many items to process at once
 
-        callback: function () {...}		OPTIONAL - a function to execute upon 
-										completion of processing the array
-    }
+`(Optional) progress(done, total)`: a function called on completion of each chunk.
+Provides two arguments; dividing the first by the second gives you the percentage complete.
 
-Any time you would use map/filer/forEach:
+`(Optional) error(err)`: a function called if an error is thrown
+
+`(Optional) callback(result, cancelled)`: a function called upon the completion (or cancelation) of the method.
+
+
+Any time you would use map/filter/forEach/every:
 
 		var a = someArray.map(someFunc);
   
@@ -33,3 +32,6 @@ You could replace it with...
 		chunker.map(someArray, someFunc, 10, function(result) {
     		a = result;	
 		});
+
+You can stop chunking at any time using `chunker.cancel();`, which will cause the callback to be called with any 
+partial results available at the time of cancelation.
