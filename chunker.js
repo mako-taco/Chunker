@@ -60,8 +60,12 @@ You could replace it with...
 			throw "chunker.map passed an object without required params ("
 				+ missingParams.join(', ') + ")";
 	};
+	var _cancelled = false;
 
 	window.chunker = {
+		cancel: function() {
+			_cancelled = true;
+		},
 		map: function(options) {
 			var array = options.array;
 			var fn = options.fn;
@@ -72,26 +76,33 @@ You could replace it with...
 
 			var map = [];
 			var chunk = function(start, size) {
-				if(start < array.length) {
-					var slice = array.slice(start, start+size);
-					for(var i=0, len = slice.length; i<len; i++) {
-						map.push( fn(slice[i]) );
-					}
+				try {
+					if(start < array.length) {
+						var slice = array.slice(start, start+size);
+						for(var i=0, len = slice.length; i<len; i++) {
+							map.push( fn(slice[i]) );
+						}
 
-					setTimeout( function() {
-						chunk(start+size, size);
-					}, 0);
+						if(!_cancelled) {
+							setTimeout( function() {
+								chunk(start+size, size);
+							}, 0);
+						}
+						else {
+							callback(map, _cancelled);
+							_cancelled = false;
+						}
+					}
+					else {
+						callback(map);
+					}
 				}
-				else {
-					callback(map);
-				} 
+				catch(e) {
+					error(e);
+				}
+
 			}
-			try {
-				chunk(0, size);
-			}
-			catch(err) {
-				error(err);
-			}
+			chunk(0, size);
 		},
 
 		filter: function(options) {
@@ -104,27 +115,33 @@ You could replace it with...
 
 			var filter = [];
 			var chunk = function(start, size) {
-				if(start < array.length) {
-					var slice = array.slice(start, start+size);
-					for(var i=0,len = slice.length; i<len; i++) {
-						if(fn(slice[i])) 
-							filter.push(slice[i]);
-					}
+				try {
+					if(start < array.length) {
+						var slice = array.slice(start, start+size);
+						for(var i=0,len = slice.length; i<len; i++) {
+							if(fn(slice[i])) 
+								filter.push(slice[i]);
+						}
 
-					setTimeout( function() {
-						chunk(start+size, size);
-					}, 0);
+						if(!_cancelled) {
+							setTimeout( function() {
+								chunk(start+size, size);
+							}, 0);
+						}
+						else {
+							callback(filter, _cancelled);
+							_cancelled = false;
+						}
+					}
+					else {
+						callback(filter);
+					} 
 				}
-				else {
-					callback(filter);
-				} 
+				catch(e) {
+					error(e);
+				}
 			}
-			try {
-				chunk(0, size);
-			}
-			catch(err) {
-				error(err);
-			}
+			chunk(0, size);
 		},
 
 		forEach: function(options) {
@@ -136,26 +153,32 @@ You could replace it with...
 			_validateInput(options);
 			
 			var chunk = function(start, size) {
-				if(start < array.length) {
-					var slice = array.slice(start, start+size);
-					for(var i=0,len = slice.length; i<len; i++) {
-						fn(slice[i]);
-					}
+				try {
+					if(start < array.length) {
+						var slice = array.slice(start, start+size);
+						for(var i=0,len = slice.length; i<len; i++) {
+							fn(slice[i]);
+						}
 
-					setTimeout( function() {
-						chunk(start+size, size);
-					}, 0);
+						if(!_cancelled) {
+							setTimeout( function() {
+								chunk(start+size, size);
+							}, 0);
+						}
+						else {
+							callback(_cancelled);
+							_cancelled = false;
+						}
+					}
+					else {
+						callback();
+					} 
 				}
-				else {
-					callback();
-				} 
+				catch(e) {
+					error(e);
+				}
 			}
-			try {
-				chunk(0, size);
-			}
-			catch(err) {
-				error(err);
-			}
+			chunk(0, size);
 		},
 
 		every: function(options) {
@@ -172,10 +195,15 @@ You could replace it with...
 					for(var i=0,len = slice.length; i<len; i++) {
 						fn(slice[i]) ? 0 : callback(false);
 					}
-
-					setTimeout( function() {
-						chunk(start+size, size);
-					}, 0);
+					if(!_cancelled) {
+						setTimeout( function() {
+							chunk(start+size, size);
+						}, 0);
+					}
+					else {
+						callback(true, _cancelled);
+						_cancelled = false;
+					}
 				}
 				else {
 					callback(true);
