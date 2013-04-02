@@ -36,6 +36,9 @@ this form:
 
 	callback: function () {...}		OPTIONAL - a function to execute upon 
 										completion of processing the array
+
+	progress: function(%) {...}		OPTIONAL - a function to execute upon
+										completion of a single chunk
 }
 
 Any time you would use map/filer/forEach:
@@ -50,6 +53,9 @@ You could replace it with...
 		});
  */
 (function() {
+
+	var _noop = function(){};
+
 	var _validateInput = function(options) {
 		var array = options.array;
 		var fn = options.fn;
@@ -60,6 +66,7 @@ You could replace it with...
 			throw "chunker.map passed an object without required params ("
 				+ missingParams.join(', ') + ")";
 	};
+
 	var _cancelled = false;
 
 	window.chunker = {
@@ -70,123 +77,132 @@ You could replace it with...
 			var array = options.array;
 			var fn = options.fn;
 			var size = options.size || 50;
-			var callback = options.callback || function(){};
-			var error = options.error || function(){};
+			var callback = options.callback || _noop;
+			var progress = options.progress || _noop;
+			var error = options.error || _noop;
 			_validateInput(options);
 
 			var map = [];
 			var chunk = function(start, size) {
-				try {
-					if(start < array.length) {
-						var slice = array.slice(start, start+size);
-						for(var i=0, len = slice.length; i<len; i++) {
-							map.push( fn(slice[i]) );
-						}
-
-						if(!_cancelled) {
-							setTimeout( function() {
-								chunk(start+size, size);
-							}, 0);
-						}
-						else {
-							callback(map, _cancelled);
-							_cancelled = false;
-						}
+				if(start < array.length) {
+					var slice = array.slice(start, start+size);
+					for(var i=0, len = slice.length; i<len; i++) {
+						map.push( fn(slice[i]) );
+					}
+					if(progress != _noop) {
+						progress(Math.min(start+size, array.length), array.length);
+					}
+					if(!_cancelled) {
+						setTimeout( function() {
+							chunk(start+size, size);
+						}, 0);
 					}
 					else {
-						callback(map);
+						callback(map, _cancelled)
+						_cancelled = false;
 					}
 				}
-				catch(e) {
-					error(e);
-				}
-
+				else {
+					callback(map);
+				} 
 			}
-			chunk(0, size);
+			try {
+				chunk(0, size);
+			}
+			catch(err) {
+				error(err);
+			}
 		},
 
 		filter: function(options) {
 			var array = options.array;
 			var fn = options.fn;
 			var size = options.size || 50;
-			var callback = options.callback || function(){};
-			var error = options.error || function(){};
+			var callback = options.callback || _noop;
+			var progress = options.progress || _noop;
+			var error = options.error || _noop;
 			_validateInput(options);
 
 			var filter = [];
 			var chunk = function(start, size) {
-				try {
-					if(start < array.length) {
-						var slice = array.slice(start, start+size);
-						for(var i=0,len = slice.length; i<len; i++) {
-							if(fn(slice[i])) 
-								filter.push(slice[i]);
-						}
-
-						if(!_cancelled) {
-							setTimeout( function() {
-								chunk(start+size, size);
-							}, 0);
-						}
-						else {
-							callback(filter, _cancelled);
-							_cancelled = false;
-						}
+				if(start < array.length) {
+					var slice = array.slice(start, start+size);
+					for(var i=0,len = slice.length; i<len; i++) {
+						if(fn(slice[i])) 
+							filter.push(slice[i]);
+					}
+					if(progress != _noop) {
+						progress(Math.min(start+size, array.length), array.length);
+					}
+					if(!_cancelled) {
+						setTimeout( function() {
+							chunk(start+size, size);
+						}, 0);
 					}
 					else {
-						callback(filter);
-					} 
+						callback(filter, _cancelled);
+						_cancelled = false;
+					}
 				}
-				catch(e) {
-					error(e);
-				}
+				else {
+					callback(filter);
+				} 
 			}
-			chunk(0, size);
+			try {
+				chunk(0, size);
+			}
+			catch(err) {
+				error(err);
+			}
 		},
 
 		forEach: function(options) {
 			var array = options.array;
 			var fn = options.fn;
 			var size = options.size || 50;
-			var callback = options.callback || function(){};
-			var error = options.error || function(){};
+			var callback = options.callback || _noop;
+			var progress = options.progress || _noop;
+			var error = options.error || _noop;
 			_validateInput(options);
 			
 			var chunk = function(start, size) {
-				try {
-					if(start < array.length) {
-						var slice = array.slice(start, start+size);
-						for(var i=0,len = slice.length; i<len; i++) {
-							fn(slice[i]);
-						}
-
-						if(!_cancelled) {
-							setTimeout( function() {
-								chunk(start+size, size);
-							}, 0);
-						}
-						else {
-							callback(_cancelled);
-							_cancelled = false;
-						}
+				if(start < array.length) {
+					var slice = array.slice(start, start+size);
+					for(var i=0,len = slice.length; i<len; i++) {
+						fn(slice[i]);
+					}
+					if(progress != _noop) {
+						progress(Math.min(start+size, array.length), array.length);
+					}
+					if(!_cancelled) {
+						setTimeout( function() {
+							chunk(start+size, size);
+						}, 0);
 					}
 					else {
-						callback();
-					} 
+						callback(_cancelled)
+						_cancelled = false;
+					}
 				}
-				catch(e) {
-					error(e);
-				}
+				else {
+					callback();
+				} 
 			}
-			chunk(0, size);
+			try {
+				chunk(0, size);
+			}
+			catch(err) {
+				error(err);
+			}
 		},
 
 		every: function(options) {
 			var array = options.array;
 			var fn = options.fn;
 			var size = options.size || 50;
-			var callback = options.callback || function(){};
-			var error = options.error || function(){};
+			var callback = options.callback || _noop;
+			var progress = options.progress || _noop;
+			var error = options.error || _noop;
 			_validateInput(options);
 			
 			var chunk = function(start, size) {
@@ -195,13 +211,16 @@ You could replace it with...
 					for(var i=0,len = slice.length; i<len; i++) {
 						fn(slice[i]) ? 0 : callback(false);
 					}
+					if(progress != _noop) {
+						progress(Math.min(start+size, array.length), array.length);
+					}
 					if(!_cancelled) {
 						setTimeout( function() {
 							chunk(start+size, size);
 						}, 0);
 					}
 					else {
-						callback(true, _cancelled);
+						callback(every, _cancelled)
 						_cancelled = false;
 					}
 				}
