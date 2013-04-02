@@ -68,12 +68,17 @@ You could replace it with...
 	};
 
 	var _cancelled = false;
+	var _working = false;
 
 	window.chunker = {
 		cancel: function() {
-			_cancelled = true;
+			if(!_working) 
+				return;
+			else
+				_cancelled = true;
 		},
 		map: function(options) {
+			_working = true;
 			var array = options.array;
 			var fn = options.fn;
 			var size = options.size || 50;
@@ -98,11 +103,13 @@ You could replace it with...
 						}, 0);
 					}
 					else {
+						_working = false;
 						callback(map, _cancelled)
 						_cancelled = false;
 					}
 				}
 				else {
+					_working = false;
 					callback(map);
 				} 
 			}
@@ -115,6 +122,7 @@ You could replace it with...
 		},
 
 		filter: function(options) {
+			_working = true;
 			var array = options.array;
 			var fn = options.fn;
 			var size = options.size || 50;
@@ -140,11 +148,13 @@ You could replace it with...
 						}, 0);
 					}
 					else {
+						_working = false;
 						callback(filter, _cancelled);
 						_cancelled = false;
 					}
 				}
 				else {
+					_working = false;
 					callback(filter);
 				} 
 			}
@@ -157,6 +167,7 @@ You could replace it with...
 		},
 
 		forEach: function(options) {
+			_working = true;
 			var array = options.array;
 			var fn = options.fn;
 			var size = options.size || 50;
@@ -180,11 +191,13 @@ You could replace it with...
 						}, 0);
 					}
 					else {
+						_working = false;
 						callback(_cancelled)
 						_cancelled = false;
 					}
 				}
 				else {
+					_working = false;
 					callback();
 				} 
 			}
@@ -197,6 +210,7 @@ You could replace it with...
 		},
 
 		every: function(options) {
+			_working = true;
 			var array = options.array;
 			var fn = options.fn;
 			var size = options.size || 50;
@@ -209,7 +223,10 @@ You could replace it with...
 				if(start < array.length) {
 					var slice = array.slice(start, start+size);
 					for(var i=0,len = slice.length; i<len; i++) {
-						fn(slice[i]) ? 0 : callback(false);
+						if( !fn(slice[i]) ) {
+							_working = false;
+							callback(false);
+						} 
 					}
 					if(progress != _noop) {
 						progress(Math.min(start+size, array.length), array.length);
@@ -220,11 +237,13 @@ You could replace it with...
 						}, 0);
 					}
 					else {
+						_working = false;
 						callback(every, _cancelled)
 						_cancelled = false;
 					}
 				}
 				else {
+					_working = false;
 					callback(true);
 				} 
 			}
